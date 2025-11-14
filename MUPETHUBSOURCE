@@ -1,69 +1,23 @@
----------------------------------------------------------------------
--- MUPET HUB - PREMIUM UI LIBRARY (Celulares + PC Compatible)        --
--- INTERFAZ SEXY / SOMBRAS / ANIMACIONES / TEMAS / GLASS PANEL     --
----------------------------------------------------------------------
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- constants
 local BLUR_MAX_SIZE = 28
 local BLUR_TIME = 1.2
 local TITLE_DISPLAY_TIME = 3
 local TITLE_FADE_TIME = 0.6
 
-local SECTION_HEIGHT = 130
-local SECTION_SPACING = 22
+local SECTION_HEIGHT = 120
+local SECTION_SPACING = 18
 local WINDOW_WIDTH = 160
 local WINDOW_HEIGHT = 120
-local WINDOW_PADDING = 10
+local WINDOW_PADDING = 8
+local BORDER_THICKNESS = 4
 
--- Theme definitions
-local THEMES = {
-    ["Glass"] = {
-        SectionColor = Color3.fromRGB(255,255,255),
-        SectionTransparency = 0.40,
-        SectionStroke = Color3.fromRGB(220,220,255),
-        WindowColor = Color3.fromRGB(255,255,255),
-        WindowTransparency = 0.30,
-        TextColor = Color3.fromRGB(20,24,30),
-        ShadowTransparency = 0.55,
-        Accent = Color3.fromRGB(140,170,255),
-        GlassEnabled = true
-    },
-
-    ["Neon"] = {
-        SectionColor = Color3.fromRGB(15,15,15),
-        SectionTransparency = 0,
-        SectionStroke = Color3.fromRGB(0, 255, 180),
-        WindowColor = Color3.fromRGB(25,25,25),
-        WindowTransparency = 0,
-        TextColor = Color3.fromRGB(0,255,200),
-        ShadowTransparency = 0.35,
-        Accent = Color3.fromRGB(0,255,150),
-        GlassEnabled = false
-    },
-
-    ["Gold"] = {
-        SectionColor = Color3.fromRGB(30,20,10),
-        SectionTransparency = 0,
-        SectionStroke = Color3.fromRGB(255,200,80),
-        WindowColor = Color3.fromRGB(40,30,15),
-        WindowTransparency = 0,
-        TextColor = Color3.fromRGB(255,220,140),
-        ShadowTransparency = 0.45,
-        Accent = Color3.fromRGB(255,180,70),
-        GlassEnabled = false
-    }
-}
-
--- ensure global blur exists
 local function ensureBlur()
     local blur = Lighting:FindFirstChild("MUPET_LIB_BLUR")
     if not blur then
@@ -75,37 +29,28 @@ local function ensureBlur()
     return blur
 end
 
----------------------------------------------------------------------
--- OBJETO PRINCIPAL
----------------------------------------------------------------------
 local MUPET_HUB = {}
 MUPET_HUB.__index = MUPET_HUB
 
 function MUPET_HUB.new(config)
     config = config or {}
     local self = setmetatable({}, MUPET_HUB)
-
     self.HubName = config.HubName or "MUPET HUB"
     self.Sections = {}
 
-    -- default theme
-    self.Theme = THEMES["Glass"]
-
-    -- GUI base
     self.Gui = Instance.new("ScreenGui")
     self.Gui.Name = "MUPET_LIB_GUI"
-    self.Gui.ResetOnSpawn = false
     self.Gui.Parent = playerGui
+    self.Gui.ResetOnSpawn = false
     self.Gui.DisplayOrder = 9999
 
-    -- Overlay principal
     self.Overlay = Instance.new("Frame")
     self.Overlay.Size = UDim2.fromScale(1,1)
     self.Overlay.BackgroundTransparency = 1
     self.Overlay.Parent = self.Gui
 
-    -- Blur
     self.Blur = ensureBlur()
+    self.Blur.Size = 0
 
     self:BuildTitle()
     self:BuildSectionContainer()
@@ -114,327 +59,127 @@ function MUPET_HUB.new(config)
     return self
 end
 
----------------------------------------------------------------------
--- TÍTULO
----------------------------------------------------------------------
 function MUPET_HUB:BuildTitle()
     local t = Instance.new("TextLabel")
     t.Name = "Title"
-    t.Size = UDim2.new(.8,0,.08,0)
-    t.Position = UDim2.new(.1,0,.06,0)
+    t.Size = UDim2.new(.8,0,.12,0)
+    t.Position = UDim2.new(.1,0,.08,0)
     t.BackgroundTransparency = 1
-    t.Font = Enum.Font.GothamBlack
-    t.TextScaled = true
+    t.Font = Enum.Font.Arcade
     t.Text = self.HubName
-    t.TextColor3 = self.Theme and (self.Theme.Accent or Color3.fromRGB(255,50,50)) or Color3.fromRGB(255,50,50)
-    t.TextStrokeTransparency = 0.3
-    t.ZIndex = 10
+    t.TextScaled = true
+    t.TextColor3 = Color3.fromRGB(255,0,0)
+    t.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+    t.TextStrokeTransparency = 0
     t.TextTransparency = 1
+    t.ZIndex = 10
     t.Parent = self.Overlay
     self.Title = t
 end
 
----------------------------------------------------------------------
--- CONTENEDOR SCROLLEABLE PARA TODAS LAS SECCIONES
----------------------------------------------------------------------
 function MUPET_HUB:BuildSectionContainer()
-    local mainScroll = Instance.new("ScrollingFrame")
-    mainScroll.Size = UDim2.new(.92,0,.72,0)
-    mainScroll.Position = UDim2.new(.04,0,.18,0)
-    mainScroll.BackgroundTransparency = 1
-    mainScroll.ScrollBarThickness = 6
-    mainScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    mainScroll.CanvasSize = UDim2.new(0,0,0,0)
-    mainScroll.ScrollingDirection = Enum.ScrollingDirection.Y
-    mainScroll.Parent = self.Overlay
+    local container = Instance.new("ScrollingFrame")
+    container.Size = UDim2.new(.9,0,.6,0)
+    container.Position = UDim2.new(.05,0,.22,0)
+    container.BackgroundTransparency = 1
+    container.ScrollBarThickness = 6
+    container.CanvasSize = UDim2.new(0,0,0,0)
+    container.Parent = self.Overlay
 
     local list = Instance.new("UIListLayout")
     list.Padding = UDim.new(0, SECTION_SPACING)
     list.FillDirection = Enum.FillDirection.Vertical
-    list.HorizontalAlignment = Enum.HorizontalAlignment.Center
     list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Parent = mainScroll
+    list.Parent = container
 
-    self.SectionContainer = mainScroll
+    self.SectionContainer = container
 end
 
----------------------------------------------------------------------
--- CREAR SECCIÓN (con glass panel simulado)
----------------------------------------------------------------------
 function MUPET_HUB:CreateSection(name)
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(0.95,0,0,SECTION_HEIGHT + 60)
-    holder.BackgroundColor3 = self.Theme.SectionColor
-    holder.BackgroundTransparency = self.Theme.SectionTransparency
-    holder.BorderSizePixel = 0
+    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + BORDER_THICKNESS + 20)
+    holder.BackgroundTransparency = 1
     holder.Parent = self.SectionContainer
 
-    -- Bordes curvos
-    local corner = Instance.new("UICorner", holder)
-    corner.CornerRadius = UDim.new(0,12)
-
-    -- Sombra premium (simula sombra por detrás)
-    local shadow = Instance.new("ImageLabel")
-    shadow.Size = UDim2.new(1,20,1,20)
-    shadow.Position = UDim2.new(0,-10,0,-10)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://6015897843" -- sombra genérica
-    shadow.ImageColor3 = Color3.fromRGB(0,0,0)
-    shadow.ImageTransparency = self.Theme.ShadowTransparency
-    shadow.ZIndex = holder.ZIndex - 1
-    shadow.Parent = holder
-
-    -- Guarda referencias en el holder
-    holder.Name = ("MUPET_Section_%s"):format(name)
-
-    -- Título de sección
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,0,26)
+    label.Size = UDim2.new(1,0,0,20)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.Font = Enum.Font.GothamBold
+    label.Font = Enum.Font.Arcade
     label.TextScaled = true
-    label.TextColor3 = self.Theme.TextColor
+    label.TextColor3 = Color3.fromRGB(255,0,0)
     label.Parent = holder
 
-    -- GLASS PANEL SIMULADO (no depende de Lighting; compatible móvil)
-    local glass = Instance.new("Frame")
-    glass.Name = "GlassPanel"
-    glass.Size = UDim2.new(1, -6, 1, -40) -- ocupa casi todo el holder dejando espacio para el label
-    glass.Position = UDim2.new(0,3,0,30)
-    glass.BackgroundTransparency = math.clamp( self.Theme.SectionTransparency, 0, 0.95 )
-    glass.BackgroundColor3 = self.Theme.SectionColor
-    glass.Parent = holder
-    glass.ZIndex = holder.ZIndex + 1
-
-    -- redondeo del glass
-    Instance.new("UICorner", glass).CornerRadius = UDim.new(0,10)
-
-    -- borde sutil (stroke)
-    local stroke = Instance.new("UIStroke", glass)
-    stroke.Color = self.Theme.SectionStroke
-    stroke.Transparency = 0.7
-    stroke.Thickness = 1
-
-    -- degradado sutil para dar sensación frosted
-    local grad = Instance.new("UIGradient", glass)
-    grad.Rotation = 90
-    grad.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(240,240,255))
-    }
-    grad.Transparency = NumberSequence.new{
-        NumberSequenceKeypoint.new(0, 0.45),
-        NumberSequenceKeypoint.new(1, 0.65)
-    }
-
-    -- Scroll horizontal para ventanas (encima del glass)
     local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1,-24,0,SECTION_HEIGHT - 8)
-    scroll.Position = UDim2.new(0,12,0,34)
+    scroll.Size = UDim2.new(1,-16,0,SECTION_HEIGHT)
+    scroll.Position = UDim2.new(0,8,0,22)
     scroll.BackgroundTransparency = 1
-    scroll.ScrollBarThickness = 5
+    scroll.ScrollBarThickness = 6
     scroll.CanvasSize = UDim2.new(0,0,0,0)
-    scroll.ScrollingDirection = Enum.ScrollingDirection.X
     scroll.Parent = holder
-    scroll.ZIndex = glass.ZIndex + 1
 
     local ui = Instance.new("UIListLayout")
     ui.FillDirection = Enum.FillDirection.Horizontal
     ui.Padding = UDim.new(0,WINDOW_PADDING)
-    ui.HorizontalAlignment = Enum.HorizontalAlignment.Center
     ui.Parent = scroll
 
-    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,10)
+    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,6)
 
-    -- bottom accent line
     local border = Instance.new("Frame")
-    border.Size = UDim2.new(1,0,0,2)
-    border.Position = UDim2.new(0,0,1,-2)
-    border.BackgroundColor3 = self.Theme.Accent
-    border.BackgroundTransparency = 0.7
+    border.Size = UDim2.new(1,0,0,BORDER_THICKNESS)
+    border.Position = UDim2.new(0,0,1,-BORDER_THICKNESS)
+    border.BackgroundColor3 = Color3.fromRGB(180,20,20)
     border.Parent = holder
 
     local sectionObj = {
         scroll = scroll,
         windows = {},
-        Name = name,
-        Frame = holder,
-        Glass = glass,
-        Shadow = shadow
+        Name = name
     }
 
     table.insert(self.Sections, sectionObj)
+
+    task.defer(function()
+        local totalHeight = 0
+        for _, child in ipairs(self.SectionContainer:GetChildren()) do
+            if child:IsA("Frame") then
+                totalHeight += child.AbsoluteSize.Y + SECTION_SPACING
+            end
+        end
+        self.SectionContainer.CanvasSize = UDim2.new(0,0,0,totalHeight)
+    end)
+
     return sectionObj
 end
 
----------------------------------------------------------------------
--- CREAR VENTANA (PREMIUM) - hover, pop, mobile tap
----------------------------------------------------------------------
 function MUPET_HUB:AddWindow(sectionObj, imageId, callback)
     if not sectionObj then return end
 
     local btn = Instance.new("ImageButton")
     btn.Name = "Window"
     btn.Size = UDim2.new(0,WINDOW_WIDTH,0,WINDOW_HEIGHT)
-    btn.BackgroundColor3 = self.Theme.WindowColor
-    btn.BackgroundTransparency = self.Theme.WindowTransparency
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
     btn.Image = imageId or ""
-    btn.AutoButtonColor = false
     btn.Parent = sectionObj.scroll
-    btn.ZIndex = sectionObj.scroll.ZIndex + 2
 
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0,10)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
 
-    -- Sombra (cada botón)
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1,14,1,14)
-    shadow.Position = UDim2.new(0,-7,0,-7)
-    shadow.BackgroundTransparency = 1
-    shadow.ZIndex = btn.ZIndex - 1
-    shadow.Image = "rbxassetid://6015897843"
-    shadow.ImageColor3 = Color3.fromRGB(0,0,0)
-    shadow.ImageTransparency = self.Theme.ShadowTransparency
-    shadow.Parent = btn
-
-    -- pequeño inner stroke (luce premium)
-    local wstroke = Instance.new("UIStroke", btn)
-    wstroke.Thickness = 1
-    wstroke.Transparency = 0.8
-    wstroke.Color = self.Theme.SectionStroke
-
-    local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-    local enlarge = TweenService:Create(btn, tweenInfo, {
-        Size = UDim2.new(0,WINDOW_WIDTH + 6,0,WINDOW_HEIGHT + 6)
-    })
-
-    local shrink = TweenService:Create(btn, tweenInfo, {
-        Size = UDim2.new(0,WINDOW_WIDTH,0,WINDOW_HEIGHT)
-    })
-
-    local shadowBright = TweenService:Create(shadow, tweenInfo, {ImageTransparency = math.clamp(self.Theme.ShadowTransparency - 0.2, 0, 1)})
-    local shadowDim = TweenService:Create(shadow, tweenInfo, {ImageTransparency = self.Theme.ShadowTransparency})
-
-    -- HOVER: MouseEnter/Leave (funciona en PC)
-    btn.MouseEnter:Connect(function()
-        enlarge:Play()
-        pcall(function() shadowBright:Play() end)
-    end)
-
-    btn.MouseLeave:Connect(function()
-        shrink:Play()
-        pcall(function() shadowDim:Play() end)
-    end)
-
-    -- Compatibilidad móvil: TouchTap -> activa el botón
-    -- TouchTap exists on GuiButton types; to be safe, also connect InputBegan for touch
-    if btn.TouchTap then
-        btn.TouchTap:Connect(function()
-            btn:Activate()
-        end)
-    end
-
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            -- quick visual response to touch: play enlarge briefly
-            enlarge:Play()
-        end
-    end)
-
-    -- Click premium
     btn.MouseButton1Click:Connect(function()
-        -- pequeño pop
-        local pop1 = TweenService:Create(btn, TweenInfo.new(.12, Enum.EasingStyle.Back), {
-            Size = UDim2.new(0,WINDOW_WIDTH - 8, 0, WINDOW_HEIGHT - 8)
-        })
-
-        local pop2 = TweenService:Create(btn, TweenInfo.new(.15, Enum.EasingStyle.Back), {
-            Size = UDim2.new(0,WINDOW_WIDTH + 10, 0, WINDOW_HEIGHT + 10)
-        })
-
-        pop1:Play()
-        pop1.Completed:Wait()
-        pop2:Play()
-
-        -- cerrar UI con blur out
         self:CloseUI()
-
-        -- ejecutar callback en delay corto
         if callback then
-            task.delay(.30, function()
+            task.delay(.25, function()
                 callback(btn)
             end)
         end
     end)
 
-    -- expose the shadow on the button instance for theme updates
-    btn.Shadow = shadow
-
     table.insert(sectionObj.windows, btn)
 
-    -- actualizar tamaño del canvas (horiz)
-    task.delay(0, function()
-        local total = (#sectionObj.windows * (WINDOW_WIDTH + WINDOW_PADDING)) + 20
-        sectionObj.scroll.CanvasSize = UDim2.new(0,total,0,0)
-    end)
+    RunService.Heartbeat:Wait()
+    local total = #sectionObj.windows * (WINDOW_WIDTH + WINDOW_PADDING) + 30
+    sectionObj.scroll.CanvasSize = UDim2.new(0,total,0,0)
 end
 
----------------------------------------------------------------------
--- Cambiar tema en caliente
----------------------------------------------------------------------
-function MUPET_HUB:SetTheme(themeName)
-    local theme = THEMES[themeName]
-    if not theme then return end
-    self.Theme = theme
-
-    -- actualizar título color
-    if self.Title then
-        self.Title.TextColor3 = theme.Accent or self.Title.TextColor3
-    end
-
-    -- refrescar UI
-    for _, section in ipairs(self.Sections) do
-        if section.Frame then
-            section.Frame.BackgroundColor3 = theme.SectionColor
-            section.Frame.BackgroundTransparency = theme.SectionTransparency
-
-            if section.Glass then
-                section.Glass.BackgroundColor3 = theme.SectionColor
-                section.Glass.BackgroundTransparency = math.clamp(theme.SectionTransparency,0,0.95)
-                -- stroke
-                local st = section.Glass:FindFirstChildOfClass("UIStroke")
-                if st then st.Color = theme.SectionStroke end
-                local g = section.Glass:FindFirstChildOfClass("UIGradient")
-                if g then
-                    -- leave gradient as-is; color shift by accent
-                end
-            end
-
-            if section.Shadow then
-                section.Shadow.ImageTransparency = theme.ShadowTransparency
-            end
-        end
-
-        for _, win in ipairs(section.windows) do
-            if win and win:IsA("ImageButton") then
-                win.BackgroundColor3 = theme.WindowColor
-                win.BackgroundTransparency = theme.WindowTransparency
-                if win.Shadow then
-                    win.Shadow.ImageTransparency = theme.ShadowTransparency
-                end
-                local stroke = win:FindFirstChildOfClass("UIStroke")
-                if stroke then stroke.Color = theme.SectionStroke end
-            end
-        end
-    end
-end
-
----------------------------------------------------------------------
--- CERRAR UI
----------------------------------------------------------------------
 function MUPET_HUB:CloseUI()
     TweenService:Create(self.Blur, TweenInfo.new(1, Enum.EasingStyle.Quad), {
         Size = 0
@@ -447,33 +192,25 @@ function MUPET_HUB:CloseUI()
     end)
 end
 
----------------------------------------------------------------------
--- ANIMACIÓN INICIAL
----------------------------------------------------------------------
 function MUPET_HUB:PlayIntro()
     TweenService:Create(self.Blur, TweenInfo.new(BLUR_TIME), {
         Size = BLUR_MAX_SIZE
     }):Play()
 
-    if self.Title then
-        local fadeIn = TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
-            TextTransparency = 0,
-            TextStrokeTransparency = 0.3
-        })
+    local fadeIn = TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
+        TextTransparency = 0,
+        TextStrokeTransparency = 0
+    })
 
-        fadeIn:Play()
-        fadeIn.Completed:Wait()
+    fadeIn:Play()
+    fadeIn.Completed:Wait()
 
-        task.wait(TITLE_DISPLAY_TIME)
+    task.wait(TITLE_DISPLAY_TIME)
 
-        TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
-            TextTransparency = 1,
-            TextStrokeTransparency = 1
-        }):Play()
-    end
+    TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
+        TextTransparency = 1,
+        TextStrokeTransparency = 1
+    }):Play()
 end
 
----------------------------------------------------------------------
--- FIN
----------------------------------------------------------------------
 return MUPET_HUB
