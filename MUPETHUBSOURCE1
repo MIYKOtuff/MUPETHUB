@@ -6,17 +6,22 @@ local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local BLUR_MAX_SIZE = 28
-local BLUR_TIME = 1.2
-local TITLE_DISPLAY_TIME = 3
-local TITLE_FADE_TIME = 0.6
+local BLUR_MAX_SIZE = 32
+local BLUR_TIME = 1.1
+local TITLE_DISPLAY_TIME = 2.6
+local TITLE_FADE_TIME = 0.55
 
 local SECTION_HEIGHT = 120
-local SECTION_SPACING = 18
+local SECTION_SPACING = 20
 local WINDOW_WIDTH = 160
 local WINDOW_HEIGHT = 120
-local WINDOW_PADDING = 8
-local BORDER_THICKNESS = 4
+local WINDOW_PADDING = 10
+local BORDER_THICKNESS = 2
+
+local P_COLOR = Color3.fromRGB(255, 40, 70) -- rojo carmesí elegante
+local BG_DARK = Color3.fromRGB(15, 15, 20)
+local BG_MID = Color3.fromRGB(25, 25, 32)
+local BG_LIGHT = Color3.fromRGB(40, 40, 48)
 
 local function ensureBlur()
     local blur = Lighting:FindFirstChild("MUPET_LIB_BLUR")
@@ -46,7 +51,8 @@ function MUPET_HUB.new(config)
 
     self.Overlay = Instance.new("Frame")
     self.Overlay.Size = UDim2.fromScale(1,1)
-    self.Overlay.BackgroundTransparency = 1
+    self.Overlay.BackgroundColor3 = BG_DARK
+    self.Overlay.BackgroundTransparency = 0.35
     self.Overlay.Parent = self.Gui
 
     self.Blur = ensureBlur()
@@ -62,15 +68,14 @@ end
 function MUPET_HUB:BuildTitle()
     local t = Instance.new("TextLabel")
     t.Name = "Title"
-    t.Size = UDim2.new(.8,0,.12,0)
-    t.Position = UDim2.new(.1,0,.08,0)
+    t.Size = UDim2.new(.85,0,.13,0)
+    t.Position = UDim2.new(.075,0,.06,0)
     t.BackgroundTransparency = 1
-    t.Font = Enum.Font.Arcade
+    t.Font = Enum.Font.GothamBold
     t.Text = self.HubName
     t.TextScaled = true
-    t.TextColor3 = Color3.fromRGB(255,0,0)
-    t.TextStrokeColor3 = Color3.fromRGB(0,0,0)
-    t.TextStrokeTransparency = 0
+    t.TextColor3 = P_COLOR
+    t.TextStrokeTransparency = 1
     t.TextTransparency = 1
     t.ZIndex = 10
     t.Parent = self.Overlay
@@ -79,10 +84,10 @@ end
 
 function MUPET_HUB:BuildSectionContainer()
     local container = Instance.new("ScrollingFrame")
-    container.Size = UDim2.new(.9,0,.6,0)
-    container.Position = UDim2.new(.05,0,.22,0)
+    container.Size = UDim2.new(.92,0,.62,0)
+    container.Position = UDim2.new(.04,0,.22,0)
     container.BackgroundTransparency = 1
-    container.ScrollBarThickness = 6
+    container.ScrollBarThickness = 4
     container.CanvasSize = UDim2.new(0,0,0,0)
     container.Parent = self.Overlay
 
@@ -97,24 +102,25 @@ end
 
 function MUPET_HUB:CreateSection(name)
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + BORDER_THICKNESS + 20)
+    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + 30)
     holder.BackgroundTransparency = 1
     holder.Parent = self.SectionContainer
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,0,20)
+    label.Size = UDim2.new(1,0,0,22)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.Font = Enum.Font.Arcade
+    label.Font = Enum.Font.GothamBold
     label.TextScaled = true
-    label.TextColor3 = Color3.fromRGB(255,0,0)
+    label.TextColor3 = P_COLOR
     label.Parent = holder
 
     local scroll = Instance.new("ScrollingFrame")
     scroll.Size = UDim2.new(1,-16,0,SECTION_HEIGHT)
-    scroll.Position = UDim2.new(0,8,0,22)
-    scroll.BackgroundTransparency = 1
-    scroll.ScrollBarThickness = 6
+    scroll.Position = UDim2.new(0,8,0,26)
+    scroll.BackgroundColor3 = BG_MID
+    scroll.BackgroundTransparency = 0.2
+    scroll.ScrollBarThickness = 4
     scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.Parent = holder
 
@@ -123,13 +129,14 @@ function MUPET_HUB:CreateSection(name)
     ui.Padding = UDim.new(0,WINDOW_PADDING)
     ui.Parent = scroll
 
-    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,6)
+    Instance.new("UICorner", scroll).CornerRadius = UDim.new(0,10)
 
-    local border = Instance.new("Frame")
-    border.Size = UDim2.new(1,0,0,BORDER_THICKNESS)
-    border.Position = UDim2.new(0,0,1,-BORDER_THICKNESS)
-    border.BackgroundColor3 = Color3.fromRGB(180,20,20)
-    border.Parent = holder
+    local glow = Instance.new("Frame")
+    glow.Size = UDim2.new(1,0,0,2)
+    glow.Position = UDim2.new(0,0,1,-2)
+    glow.BackgroundColor3 = P_COLOR
+    glow.BackgroundTransparency = .4
+    glow.Parent = holder
 
     local sectionObj = {
         scroll = scroll,
@@ -158,11 +165,34 @@ function MUPET_HUB:AddWindow(sectionObj, imageId, callback)
     local btn = Instance.new("ImageButton")
     btn.Name = "Window"
     btn.Size = UDim2.new(0,WINDOW_WIDTH,0,WINDOW_HEIGHT)
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BackgroundColor3 = BG_LIGHT
     btn.Image = imageId or ""
+    btn.AutoButtonColor = false
     btn.Parent = sectionObj.scroll
 
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1,12,1,12)
+    shadow.Position = UDim2.new(0,-6,0,-6)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.new(0,0,0)
+    shadow.ImageTransparency = .6
+    shadow.ZIndex = 0
+    shadow.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(55,55,65)
+        }):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = BG_LIGHT
+        }):Play()
+    end)
 
     btn.MouseButton1Click:Connect(function()
         self:CloseUI()
@@ -198,8 +228,7 @@ function MUPET_HUB:PlayIntro()
     }):Play()
 
     local fadeIn = TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
-        TextTransparency = 0,
-        TextStrokeTransparency = 0
+        TextTransparency = 0
     })
 
     fadeIn:Play()
@@ -208,8 +237,7 @@ function MUPET_HUB:PlayIntro()
     task.wait(TITLE_DISPLAY_TIME)
 
     TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
-        TextTransparency = 1,
-        TextStrokeTransparency = 1
+        TextTransparency = 1
     }):Play()
 end
 
