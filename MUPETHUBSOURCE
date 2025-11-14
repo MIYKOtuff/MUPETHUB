@@ -8,15 +8,36 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local BLUR_MAX_SIZE = 28
 local BLUR_TIME = 1.2
-local TITLE_DISPLAY_TIME = 3
+local TITLE_DISPLAY_TIME = 2.4
 local TITLE_FADE_TIME = 0.6
 
-local SECTION_HEIGHT = 120
-local SECTION_SPACING = 18
+local SECTION_HEIGHT = 130
+local SECTION_SPACING = 22
 local WINDOW_WIDTH = 160
-local WINDOW_HEIGHT = 120
-local WINDOW_PADDING = 8
+local WINDOW_HEIGHT = 130
+local WINDOW_PADDING = 10
 local BORDER_THICKNESS = 4
+
+local THEMES = {
+    Dark = {
+        Background = Color3.fromRGB(25,25,25),
+        Text = Color3.fromRGB(255,255,255),
+        Accent = Color3.fromRGB(90,90,90),
+        Stroke = Color3.fromRGB(0,0,0)
+    },
+    NeonRed = {
+        Background = Color3.fromRGB(20,0,0),
+        Text = Color3.fromRGB(255,40,40),
+        Accent = Color3.fromRGB(255,0,0),
+        Stroke = Color3.fromRGB(0,0,0)
+    },
+    Gold = {
+        Background = Color3.fromRGB(30,20,0),
+        Text = Color3.fromRGB(255,220,140),
+        Accent = Color3.fromRGB(255,200,0),
+        Stroke = Color3.fromRGB(60,40,0)
+    }
+}
 
 local function ensureBlur()
     local blur = Lighting:FindFirstChild("MUPET_LIB_BLUR")
@@ -35,7 +56,9 @@ MUPET_HUB.__index = MUPET_HUB
 function MUPET_HUB.new(config)
     config = config or {}
     local self = setmetatable({}, MUPET_HUB)
+
     self.HubName = config.HubName or "MUPET HUB"
+    self.Theme = THEMES[config.Theme] or THEMES.Dark
     self.Sections = {}
 
     self.Gui = Instance.new("ScreenGui")
@@ -46,8 +69,17 @@ function MUPET_HUB.new(config)
 
     self.Overlay = Instance.new("Frame")
     self.Overlay.Size = UDim2.fromScale(1,1)
-    self.Overlay.BackgroundTransparency = 1
+    self.Overlay.BackgroundColor3 = self.Theme.Background
+    self.Overlay.BackgroundTransparency = .25
     self.Overlay.Parent = self.Gui
+
+    local glow = Instance.new("UIGradient", self.Overlay)
+    glow.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+        ColorSequenceKeypoint.new(.5, self.Theme.Accent),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0))
+    }
+    glow.Rotation = 90
 
     self.Blur = ensureBlur()
     self.Blur.Size = 0
@@ -63,24 +95,25 @@ function MUPET_HUB:BuildTitle()
     local t = Instance.new("TextLabel")
     t.Name = "Title"
     t.Size = UDim2.new(.8,0,.12,0)
-    t.Position = UDim2.new(.1,0,.08,0)
+    t.Position = UDim2.new(.1,0,.06,0)
     t.BackgroundTransparency = 1
-    t.Font = Enum.Font.Arcade
+    t.Font = Enum.Font.GothamBlack
     t.Text = self.HubName
     t.TextScaled = true
-    t.TextColor3 = Color3.fromRGB(255,0,0)
-    t.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+    t.TextColor3 = self.Theme.Text
+    t.TextStrokeColor3 = self.Theme.Stroke
     t.TextStrokeTransparency = 0
     t.TextTransparency = 1
-    t.ZIndex = 10
+    t.ZIndex = 20
     t.Parent = self.Overlay
+
     self.Title = t
 end
 
 function MUPET_HUB:BuildSectionContainer()
     local container = Instance.new("ScrollingFrame")
-    container.Size = UDim2.new(.9,0,.6,0)
-    container.Position = UDim2.new(.05,0,.22,0)
+    container.Size = UDim2.new(.92,0,.63,0)
+    container.Position = UDim2.new(.04,0,.22,0)
     container.BackgroundTransparency = 1
     container.ScrollBarThickness = 6
     container.CanvasSize = UDim2.new(0,0,0,0)
@@ -97,46 +130,44 @@ end
 
 function MUPET_HUB:CreateSection(name)
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + BORDER_THICKNESS + 20)
+    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + BORDER_THICKNESS + 26)
     holder.BackgroundTransparency = 1
     holder.Parent = self.SectionContainer
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,0,20)
+    label.Size = UDim2.new(1,0,0,22)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.Font = Enum.Font.Arcade
+    label.Font = Enum.Font.GothamBold
     label.TextScaled = true
-    label.TextColor3 = Color3.fromRGB(255,0,0)
+    label.TextColor3 = self.Theme.Accent
     label.Parent = holder
 
     local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1,-16,0,SECTION_HEIGHT)
-    scroll.Position = UDim2.new(0,8,0,22)
-    scroll.BackgroundTransparency = 1
+    scroll.Size = UDim2.new(1,-18,0,SECTION_HEIGHT)
+    scroll.Position = UDim2.new(0,8,0,26)
+    scroll.BackgroundTransparency = .15
+    scroll.BackgroundColor3 = self.Theme.Background
     scroll.ScrollBarThickness = 6
     scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.Parent = holder
+
+    Instance.new("UICorner", scroll).CornerRadius = UDim.new(0,10)
 
     local ui = Instance.new("UIListLayout")
     ui.FillDirection = Enum.FillDirection.Horizontal
     ui.Padding = UDim.new(0,WINDOW_PADDING)
     ui.Parent = scroll
 
-    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,6)
+    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,8)
 
     local border = Instance.new("Frame")
     border.Size = UDim2.new(1,0,0,BORDER_THICKNESS)
     border.Position = UDim2.new(0,0,1,-BORDER_THICKNESS)
-    border.BackgroundColor3 = Color3.fromRGB(180,20,20)
+    border.BackgroundColor3 = self.Theme.Accent
     border.Parent = holder
 
-    local sectionObj = {
-        scroll = scroll,
-        windows = {},
-        Name = name
-    }
-
+    local sectionObj = {scroll = scroll, windows = {}, Name = name}
     table.insert(self.Sections, sectionObj)
 
     task.defer(function()
@@ -158,11 +189,12 @@ function MUPET_HUB:AddWindow(sectionObj, imageId, callback)
     local btn = Instance.new("ImageButton")
     btn.Name = "Window"
     btn.Size = UDim2.new(0,WINDOW_WIDTH,0,WINDOW_HEIGHT)
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BackgroundColor3 = self.Theme.Accent
     btn.Image = imageId or ""
+    btn.ImageTransparency = .05
     btn.Parent = sectionObj.scroll
 
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
 
     btn.MouseButton1Click:Connect(function()
         self:CloseUI()
@@ -181,9 +213,7 @@ function MUPET_HUB:AddWindow(sectionObj, imageId, callback)
 end
 
 function MUPET_HUB:CloseUI()
-    TweenService:Create(self.Blur, TweenInfo.new(1, Enum.EasingStyle.Quad), {
-        Size = 0
-    }):Play()
+    TweenService:Create(self.Blur, TweenInfo.new(1, Enum.EasingStyle.Quad), {Size = 0}):Play()
 
     task.delay(.3, function()
         if self.Gui then
@@ -193,9 +223,7 @@ function MUPET_HUB:CloseUI()
 end
 
 function MUPET_HUB:PlayIntro()
-    TweenService:Create(self.Blur, TweenInfo.new(BLUR_TIME), {
-        Size = BLUR_MAX_SIZE
-    }):Play()
+    TweenService:Create(self.Blur, TweenInfo.new(BLUR_TIME), {Size = BLUR_MAX_SIZE}):Play()
 
     local fadeIn = TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {
         TextTransparency = 0,
