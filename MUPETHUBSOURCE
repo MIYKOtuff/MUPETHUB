@@ -1,0 +1,126 @@
+local Players = game:GetService("Players") local TweenService = game:GetService("TweenService") local RunService = game:GetService("RunService") local Lighting = game:GetService("Lighting") local player = Players.LocalPlayer local playerGui = player:WaitForChild("PlayerGui")
+
+local BLUR_MAX_SIZE = 28 local BLUR_TIME = 1.2 local TITLE_DISPLAY_TIME = 3 local TITLE_FADE_TIME = 0.6 local SECTION_HEIGHT = 120 local SECTION_SPACING = 18 local WINDOW_WIDTH = 160 local WINDOW_HEIGHT = 120 local WINDOW_PADDING = 8 local BORDER_THICKNESS = 4
+
+local function ensureBlur() local blur = Lighting:FindFirstChildOfClass("BlurEffect") if not blur then blur = Instance.new("BlurEffect") blur.Name = "MUPET_LIB_BLUR" blur.Parent = Lighting blur.Size = 0 end return blur end
+
+local MUPET_HUB = {} MUPET_HUB.__index = MUPET_HUB
+
+function MUPET_HUB.new(config) config = config or {} local self = setmetatable({}, MUPET_HUB)
+
+self.SectionNames = config.SectionNames or {"Section 1","Section 2","Section 3"}
+self.Sections = {}
+
+self.Gui = Instance.new("ScreenGui")
+self.Gui.Name = "MUPET_LIB_GUI"
+self.Gui.Parent = playerGui
+self.Gui.ResetOnSpawn = false
+self.Gui.DisplayOrder = 9999
+
+self.Overlay = Instance.new("Frame")
+self.Overlay.Size = UDim2.fromScale(1,1)
+self.Overlay.BackgroundTransparency = 1
+self.Overlay.Parent = self.Gui
+
+self.Blur = ensureBlur()
+self.Blur.Size = 0
+
+self:BuildTitle()
+self:BuildSections()
+self:PlayIntro()
+
+return self
+
+end
+
+function MUPET_HUB:BuildTitle() local t = Instance.new("TextLabel") t.Name = "Title" t.Size = UDim2.new(.8,0,.12,0) t.Position = UDim2.new(.1,0,.08,0) t.BackgroundTransparency = 1 t.Font = Enum.Font.Arcade t.Text = "MUPET HUB" t.TextScaled = true t.TextColor3 = Color3.fromRGB(255,0,0) t.TextStrokeColor3 = Color3.fromRGB(0,0,0) t.TextStrokeTransparency = 0 t.TextTransparency = 1 t.ZIndex = 10 t.Parent = self.Overlay self.Title = t end
+
+function MUPET_HUB:BuildSections() local container = Instance.new("Frame") container.Size = UDim2.new(.9,0,.6,0) container.Position = UDim2.new(.05,0,.22,0) container.BackgroundTransparency = 1 container.Parent = self.Overlay
+
+local list = Instance.new("UIListLayout")
+list.Padding = UDim.new(0, SECTION_SPACING)
+list.FillDirection = Enum.FillDirection.Vertical
+list.SortOrder = Enum.SortOrder.LayoutOrder
+list.Parent = container
+
+for i,name in ipairs(self.SectionNames) do
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1,0,0,SECTION_HEIGHT + BORDER_THICKNESS + 20)
+    holder.BackgroundTransparency = 1
+    holder.LayoutOrder = i
+    holder.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,0,20)
+    label.Position = UDim2.new(0,0,0,0)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.Font = Enum.Font.Arcade
+    label.TextScaled = true
+    label.TextColor3 = Color3.fromRGB(255,0,0)
+    label.Parent = holder
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1,-16,0,SECTION_HEIGHT)
+    scroll.Position = UDim2.new(0,8,0,22)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 6
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.Parent = holder
+
+    local ui = Instance.new("UIListLayout")
+    ui.FillDirection = Enum.FillDirection.Horizontal
+    ui.Padding = UDim.new(0,WINDOW_PADDING)
+    ui.Parent = scroll
+
+    Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0,6)
+
+    local border = Instance.new("Frame")
+    border.Size = UDim2.new(1,0,0,BORDER_THICKNESS)
+    border.Position = UDim2.new(0,0,1,-BORDER_THICKNESS)
+    border.BackgroundColor3 = Color3.fromRGB(180,20,20)
+    border.Parent = holder
+
+    self.Sections[i] = {scroll = scroll, windows = {}}
+end
+
+end
+
+function MUPET_HUB:AddWindow(section, imageId, callback) local sec = self.Sections[section] if not sec then return end
+
+local btn = Instance.new("ImageButton")
+btn.Name = "Window"
+btn.Size = UDim2.new(0,WINDOW_WIDTH,0,WINDOW_HEIGHT)
+btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+btn.Image = imageId or ""
+btn.Parent = sec.scroll
+
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+btn.MouseButton1Click:Connect(function()
+    self:FadeOutBlur()
+    if callback then callback(btn) end
+end)
+
+table.insert(sec.windows, btn)
+RunService.Heartbeat:Wait()
+local total = #sec.windows * (WINDOW_WIDTH + WINDOW_PADDING) + 30
+sec.scroll.CanvasSize = UDim2.new(0,total,0,0)
+
+end
+
+function MUPET_HUB:FadeOutBlur() local tw = TweenService:Create(self.Blur, TweenInfo.new(1, Enum.EasingStyle.Quad), {Size = 0}) tw:Play() end
+
+function MUPET_HUB:PlayIntro() TweenService:Create(self.Blur, TweenInfo.new(BLUR_TIME), {Size = BLUR_MAX_SIZE}):Play()
+
+local fadeIn = TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {TextTransparency = 0, TextStrokeTransparency = 0})
+fadeIn:Play()
+fadeIn.Completed:Wait()
+
+task.wait(TITLE_DISPLAY_TIME)
+
+TweenService:Create(self.Title, TweenInfo.new(TITLE_FADE_TIME), {TextTransparency = 1, TextStrokeTransparency = 1}):Play()
+
+end
+
+return MUPET_HUB
